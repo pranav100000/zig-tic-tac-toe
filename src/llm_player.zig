@@ -39,30 +39,30 @@ fn createTicTacToePrompt(board: []const u8, computer_symbol: u8) ![]const u8 {
     try prompt.appendSlice("You are playing tic-tac-toe. The board is represented as a 3x3 grid. ");
     try prompt.appendSlice("The board is: ");
     try prompt.appendSlice(json_string);
-    try prompt.appendSlice("The number you select MUST be a number that is on the board.");
+    try prompt.appendSlice(" The number you select MUST be a number that is on the board. ");
     try prompt.appendSlice("You are playing as: ");
     try prompt.append(computer_symbol);
-    try prompt.appendSlice("RULES:");
-    try prompt.appendSlice("1. You can ONLY select a position that contains a number (1-9) on the current board.");
-    try prompt.appendSlice("2. You CANNOT select any position that already contains an 'X' or an 'O'.");
-    try prompt.appendSlice("3. Valid moves are ONLY the numerical values (1-9) that you can see on the current board.");
-    try prompt.appendSlice("4. Any position that shows a number is available; any position showing 'X' or 'O' is already taken.");
-    try prompt.appendSlice("Respond with ONLY a single digit (1-9) representing your move. Do not include any explanation or additional text.");
-    try prompt.appendSlice("Choose ONLY from the numbers that are visible on the current board.");
-    try prompt.appendSlice("These are your available moves: ");
+    try prompt.appendSlice(" RULES:");
+    try prompt.appendSlice("1. You can ONLY select a position that contains a number (1-9) on the current board. ");
+    try prompt.appendSlice("2. You CANNOT select any position that already contains an 'X' or an 'O'. ");
+    try prompt.appendSlice("3. Valid moves are ONLY the numerical values (1-9) that you can see on the current board. ");
+    try prompt.appendSlice("4. Any position that shows a number is available; any position showing 'X' or 'O' is already taken. ");
+    try prompt.appendSlice("Respond with ONLY a single digit (1-9) representing your move. Do not include any explanation or additional text. ");
+    try prompt.appendSlice("Choose ONLY from the numbers that are visible on the current board. ");
+    try prompt.appendSlice("These are your available moves: {");
 
     // Convert available moves to a string and append
     for (available_moves) |move| {
         try prompt.appendSlice(&[_]u8{move});
-        try prompt.appendSlice(" ");
+        try prompt.appendSlice(",");
     }
-    try prompt.appendSlice("The number you select MUST be in the above available moves.");
-    try prompt.appendSlice("Consider all available moves before you make your move.");
-    try prompt.appendSlice("The goal of the game is to get 3 of your symbols in a row, column, or diagonal.");
-    try prompt.appendSlice("If you see a winning opportunity, you MUST take it.");
-    try prompt.appendSlice("If you can make a move that will make you win in the next move, you MUST make that move.");
-    try prompt.appendSlice("If you see a move that will block the other player from winning, you MUST make that move.");
-    try prompt.appendSlice("Remember, you MUST pick a move out of the available moves.");
+    try prompt.appendSlice("} The number you select MUST be in the above available moves. ");
+    try prompt.appendSlice("Consider all available moves before you make your move. ");
+    try prompt.appendSlice("The goal of the game is to get 3 of your symbols in a row, column, or diagonal. ");
+    try prompt.appendSlice("If you see a winning opportunity, you MUST take it. ");
+    try prompt.appendSlice("If you can make a move that will make you win in the next move, you MUST make that move. ");
+    try prompt.appendSlice("If you see a move that will block the other player from winning, you MUST make that move. ");
+    try prompt.appendSlice("Remember, you MUST pick a move out of the available moves. ");
 
     return prompt.toOwnedSlice();
 }
@@ -129,7 +129,6 @@ fn chatGPTChatCompletion(prompt: []const u8) !u8 {
         for (content) |char| {
             if (char >= '1' and char <= '9') {
                 // Return just the digit
-                std.debug.print("ChatGPT chose move: {c}\n", .{char});
                 return char - '0';
             }
         }
@@ -165,7 +164,11 @@ fn claudeChatCompletion(prompt: []const u8) !u8 {
 
     const request = .{
         .model = "claude-3-7-sonnet-20250219",
-        .max_tokens = 1024,
+        .max_tokens = 20000,
+        .thinking = .{
+            .type = "enabled",
+            .budget_tokens = 16000,
+        },
         .messages = [_]struct {
             role: []const u8,
             content: []const u8,
@@ -178,20 +181,24 @@ fn claudeChatCompletion(prompt: []const u8) !u8 {
     };
 
     try std.json.stringify(request, .{}, json_string.writer());
-
     const response = try post("https://api.anthropic.com/v1/messages", headers, json_string.items, &client, allocator);
+
     const result = try std.json.parseFromSlice(AnthropicResponse, allocator, response.items, .{ .ignore_unknown_fields = true });
 
-    // Extract the content from the first message in the response
+    // Extract the content blocks from the response
     if (result.value.content.len > 0) {
-        const content = result.value.content[0].text;
+        // Look for a content block with type "text"
+        for (result.value.content) |content_block| {
+            if (std.mem.eql(u8, content_block.type, "text") and content_block.text != null) {
+                const content = content_block.text.?;
 
-        // Find the first digit in the response
-        for (content) |char| {
-            if (char >= '1' and char <= '9') {
-                // Return just the digit
-                std.debug.print("Claude AI chose move: {c}\n", .{char});
-                return char - '0';
+                // Find the first digit in the response
+                for (content) |char| {
+                    if (char >= '1' and char <= '9') {
+                        // Return just the digit
+                        return char - '0';
+                    }
+                }
             }
         }
 
@@ -249,18 +256,23 @@ const OpenAIResponse = struct {
 // Struct for the Anthropic API response
 const AnthropicContentBlock = struct {
     type: []const u8,
-    text: []const u8,
+    text: ?[]const u8 = null,
+    thinking: ?[]const u8 = null,
+    signature: ?[]const u8 = null,
 };
 
 const AnthropicResponse = struct {
     id: []const u8,
     type: []const u8,
     role: []const u8,
-    content: []AnthropicContentBlock,
     model: []const u8,
+    content: []AnthropicContentBlock,
     stop_reason: []const u8,
+    stop_sequence: ?[]const u8 = null,
     usage: struct {
         input_tokens: i32,
         output_tokens: i32,
+        cache_creation_input_tokens: ?i32 = null,
+        cache_read_input_tokens: ?i32 = null,
     },
 };

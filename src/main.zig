@@ -225,6 +225,7 @@ const Game = struct {
     fn makeAIMove(self: *Game) !bool {
         const move = try get_move(self.playing_against_claude, self.board_string, self.computer_symbol);
         self.board[move - 1] = self.computer_symbol;
+        try stdout.print("{s} chose move: {c}\n", .{if (self.playing_against_claude) "Claude" else "ChatGPT", move});
 
         try self.updateBoardString();
 
