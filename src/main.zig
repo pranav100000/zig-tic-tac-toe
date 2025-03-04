@@ -86,7 +86,11 @@ pub fn main() !void {
             break;
         }
 
-        const position_int = try std.fmt.parseInt(usize, position.?, 10);
+        const position_int = std.fmt.parseInt(usize, position.?, 10) catch {
+            try stdout.print("Invalid input. Please enter a number between 1 and 9.\n", .{});
+            continue;
+        };
+
         if (position_int < 1 or position_int > 9) {
             try stdout.print("Invalid position. Please enter a number between 1 and 9.\n", .{});
             continue;
