@@ -56,8 +56,8 @@ pub fn main() !void {
             board[move - 1] = computer_symbol;
             board_string = try draw_tic_tac_toe_board(allocator, board);
         }
-        try stdout.print("Board:\n{s}", .{board_string});
     }
+    try stdout.print("Board:\n{s}", .{board_string});
 
     while (true) {
         if (playing_against_ai and !is_x_turn) {
