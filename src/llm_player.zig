@@ -3,15 +3,15 @@ const writer = std.io.getStdOut().writer();
 const json = std.json;
 
 const open_ai_api_key = "";
+const claude_api_key = "";
 
-pub fn get_move(board: []const u8, computer_symbol: u8) !u8 {
+pub fn get_chat_gpt_move(board: []const u8, computer_symbol: u8) !u8 {
     const prompt = try create_tictactoe_prompt(board, computer_symbol);
     const move = try chat_completion(prompt);
     return move;
 }
 
 pub fn create_tictactoe_prompt(board: []const u8, computer_symbol: u8) ![]const u8 {
-
     const allocator = std.heap.page_allocator;
     var prompt = std.ArrayList(u8).init(allocator);
     errdefer prompt.deinit();
@@ -20,14 +20,12 @@ pub fn create_tictactoe_prompt(board: []const u8, computer_symbol: u8) ![]const 
     const json_string = try json.stringifyAlloc(allocator, board, .{});
     defer allocator.free(json_string);
 
-
     try prompt.appendSlice("You are playing tic-tac-toe. The board is represented as a 3x3 grid. ");
     try prompt.appendSlice("The board is: ");
     try prompt.appendSlice(json_string);
     try prompt.appendSlice("You are: ");
     try prompt.append(computer_symbol);
     try prompt.appendSlice(" Only respond with a single number between 1 and 9 that is the position you want to play. You CANNOT play in a position that is already taken. The only available moves are the numbers in the board.");
-
 
     return prompt.toOwnedSlice();
 }

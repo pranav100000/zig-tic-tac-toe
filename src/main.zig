@@ -1,6 +1,6 @@
 const std = @import("std");
 const stdin = std.io.getStdIn().reader();
-const get_move = @import("llm_player.zig").get_move;
+const get_move = @import("llm_player.zig").get_chat_gpt_move;
 
 pub fn main() !void {
     const stdout_file = std.io.getStdOut().writer();
