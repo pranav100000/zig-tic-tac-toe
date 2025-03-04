@@ -1,7 +1,8 @@
 const std = @import("std");
 const stdin = std.io.getStdIn().reader();
-const get_move = @import("llm_player.zig").get_chat_gpt_move;
-
+const get_chat_gpt_move = @import("llm_player.zig").get_chat_gpt_move;
+const get_claude_move = @import("llm_player.zig").get_claude_move;
+const get_move = @import("llm_player.zig").get_move;
 pub fn main() !void {
     const stdout_file = std.io.getStdOut().writer();
     var bw = std.io.bufferedWriter(stdout_file);
@@ -27,8 +28,20 @@ pub fn main() !void {
     var is_x_turn: bool = true;
     const playing_against_ai = buffer[0] == 'y';
     const computer_symbol: u8 = 'O';
+    var playing_against_claude: bool = false;
 
     if (playing_against_ai) {
+        try stdout.print("Do you want to play against ChatGPT or Claude? (g/c): ", .{});
+        try bw.flush();
+
+        response = try stdin.readUntilDelimiterOrEof(&buffer, '\n');
+        if (response == null) {
+            return;
+        }
+
+        playing_against_claude = buffer[0] == 'c';
+
+        std.debug.print("Playing against {s}\n", .{if (playing_against_claude) "Claude" else "ChatGPT"});
         try stdout.print("Do you want to go first? (y/n): ", .{});
         try bw.flush();
 
@@ -39,16 +52,16 @@ pub fn main() !void {
         const go_first = buffer[0] == 'y';
         try stdout.print("You are X\n", .{});
         if (!go_first) {
-            board_string = try draw_tic_tac_toe_board(allocator, board);
-            const move = try get_move(board_string, computer_symbol);
+            const move = try get_move(playing_against_claude, board_string, computer_symbol);
             board[move - 1] = computer_symbol;
+            board_string = try draw_tic_tac_toe_board(allocator, board);
         }
         try stdout.print("Board:\n{s}", .{board_string});
     }
 
     while (true) {
         if (playing_against_ai and !is_x_turn) {
-            const move = try get_move(board_string, computer_symbol);
+            const move = try get_move(playing_against_claude, board_string, computer_symbol);
             board[move - 1] = computer_symbol;
 
             // Free old board string before assigning new one
