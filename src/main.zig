@@ -73,6 +73,10 @@ pub fn main() !void {
                 try stdout.print("Game over! {s} wins!\n", .{if (is_x_turn) "X" else "O"});
                 break;
             }
+            if (check_draw(board)) {
+                try stdout.print("Game over! It's a draw!\n", .{});
+                break;
+            }
             is_x_turn = !is_x_turn;
             continue;
         }
@@ -112,16 +116,7 @@ pub fn main() !void {
             break;
         }
 
-        // Check for a draw
-        var is_draw = true;
-        for (board) |cell| {
-            if (cell != 'X' and cell != 'O') {
-                is_draw = false;
-                break;
-            }
-        }
-
-        if (is_draw) {
+        if (check_draw(board)) {
             try stdout.print("Game over! It's a draw!\n", .{});
             break;
         }
@@ -143,6 +138,17 @@ pub fn draw_tic_tac_toe_board(allocator: std.mem.Allocator, board: [9]u8) ![]u8 
     try std.fmt.format(result.writer(), " {c} | {c} | {c} \n", .{ board[6], board[7], board[8] });
 
     return result.toOwnedSlice();
+}
+
+pub fn check_draw(board: [9]u8) bool {
+    var is_draw = true;
+    for (board) |cell| {
+        if (cell != 'X' and cell != 'O') {
+            is_draw = false;
+            break;
+        }
+    }
+    return is_draw;
 }
 
 pub fn check_win(board: [9]u8) bool {
