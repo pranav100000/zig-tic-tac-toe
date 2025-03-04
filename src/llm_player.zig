@@ -5,26 +5,26 @@ const json = std.json;
 const open_ai_api_key = "";
 const claude_api_key = "";
 
-pub fn get_move(is_playing_claude: bool, board: []const u8, computer_symbol: u8) !u8 {
+pub fn getMove(is_playing_claude: bool, board: []const u8, computer_symbol: u8) !u8 {
     if (is_playing_claude) {
-        return get_claude_move(board, computer_symbol);
+        return getClaudeMove(board, computer_symbol);
     }
-    return get_chat_gpt_move(board, computer_symbol);
+    return getChatGPTMove(board, computer_symbol);
 }
 
-fn get_chat_gpt_move(board: []const u8, computer_symbol: u8) !u8 {
-    const prompt = try create_tic_tac_toe_prompt(board, computer_symbol);
-    const move = try chat_gpt_chat_completion(prompt);
+fn getChatGPTMove(board: []const u8, computer_symbol: u8) !u8 {
+    const prompt = try createTicTacToePrompt(board, computer_symbol);
+    const move = try chatGPTChatCompletion(prompt);
     return move;
 }
 
-fn get_claude_move(board: []const u8, computer_symbol: u8) !u8 {
-    const prompt = try create_tic_tac_toe_prompt(board, computer_symbol);
-    const move = try claude_chat_completion(prompt);
+fn getClaudeMove(board: []const u8, computer_symbol: u8) !u8 {
+    const prompt = try createTicTacToePrompt(board, computer_symbol);
+    const move = try claudeChatCompletion(prompt);
     return move;
 }
 
-fn create_tic_tac_toe_prompt(board: []const u8, computer_symbol: u8) ![]const u8 {
+fn createTicTacToePrompt(board: []const u8, computer_symbol: u8) ![]const u8 {
     const allocator = std.heap.page_allocator;
     var prompt = std.ArrayList(u8).init(allocator);
     errdefer prompt.deinit();
@@ -33,7 +33,7 @@ fn create_tic_tac_toe_prompt(board: []const u8, computer_symbol: u8) ![]const u8
     const json_string = try json.stringifyAlloc(allocator, board, .{});
     defer allocator.free(json_string);
 
-    const available_moves = try get_available_moves(allocator, board);
+    const available_moves = try getAvailableMoves(allocator, board);
     defer allocator.free(available_moves);
 
     try prompt.appendSlice("You are playing tic-tac-toe. The board is represented as a 3x3 grid. ");
@@ -61,7 +61,7 @@ fn create_tic_tac_toe_prompt(board: []const u8, computer_symbol: u8) ![]const u8
     return prompt.toOwnedSlice();
 }
 
-fn get_available_moves(allocator: std.mem.Allocator, board: []const u8) ![]u8 {
+fn getAvailableMoves(allocator: std.mem.Allocator, board: []const u8) ![]u8 {
     var available_moves = std.ArrayList(u8).init(allocator);
     errdefer available_moves.deinit();
 
@@ -69,14 +69,14 @@ fn get_available_moves(allocator: std.mem.Allocator, board: []const u8) ![]u8 {
     for (board) |char| {
         // Check if the character is a digit between 1 and 9
         if (char >= '1' and char <= '9') {
-            try available_moves.append(char - '0'); // Convert from ASCII to numeric value
+            try available_moves.append(char);
         }
     }
 
     return available_moves.toOwnedSlice();
 }
 
-fn chat_gpt_chat_completion(prompt: []const u8) !u8 {
+fn chatGPTChatCompletion(prompt: []const u8) !u8 {
     const alloc = std.heap.page_allocator;
     var arena = std.heap.ArenaAllocator.init(alloc);
     const allocator = arena.allocator();
@@ -135,7 +135,7 @@ fn chat_gpt_chat_completion(prompt: []const u8) !u8 {
     return error.EmptyResponse;
 }
 
-fn claude_chat_completion(prompt: []const u8) !u8 {
+fn claudeChatCompletion(prompt: []const u8) !u8 {
     const alloc = std.heap.page_allocator;
     var arena = std.heap.ArenaAllocator.init(alloc);
     const allocator = arena.allocator();
