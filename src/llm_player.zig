@@ -12,19 +12,19 @@ pub fn get_move(is_playing_claude: bool, board: []const u8, computer_symbol: u8)
     return get_chat_gpt_move(board, computer_symbol);
 }
 
-pub fn get_chat_gpt_move(board: []const u8, computer_symbol: u8) !u8 {
-    const prompt = try create_tictactoe_prompt(board, computer_symbol);
+fn get_chat_gpt_move(board: []const u8, computer_symbol: u8) !u8 {
+    const prompt = try create_tic_tac_toe_prompt(board, computer_symbol);
     const move = try chat_gpt_chat_completion(prompt);
     return move;
 }
 
-pub fn get_claude_move(board: []const u8, computer_symbol: u8) !u8 {
-    const prompt = try create_tictactoe_prompt(board, computer_symbol);
+fn get_claude_move(board: []const u8, computer_symbol: u8) !u8 {
+    const prompt = try create_tic_tac_toe_prompt(board, computer_symbol);
     const move = try claude_chat_completion(prompt);
     return move;
 }
 
-fn create_tictactoe_prompt(board: []const u8, computer_symbol: u8) ![]const u8 {
+fn create_tic_tac_toe_prompt(board: []const u8, computer_symbol: u8) ![]const u8 {
     const allocator = std.heap.page_allocator;
     var prompt = std.ArrayList(u8).init(allocator);
     errdefer prompt.deinit();

@@ -22,7 +22,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     var board: [9]u8 = [_]u8{ '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-    var board_string = try draw_tic_tac_toe_board(allocator, board);
+    var board_string = try board_to_string(allocator, board);
     defer allocator.free(board_string); // Free initial board string
 
     var is_x_turn: bool = true;
@@ -54,7 +54,7 @@ pub fn main() !void {
         if (!go_first) {
             const move = try get_move(playing_against_claude, board_string, computer_symbol);
             board[move - 1] = computer_symbol;
-            board_string = try draw_tic_tac_toe_board(allocator, board);
+            board_string = try board_to_string(allocator, board);
         }
     }
     try stdout.print("Board:\n{s}", .{board_string});
@@ -66,7 +66,7 @@ pub fn main() !void {
 
             // Free old board string before assigning new one
             allocator.free(board_string);
-            board_string = try draw_tic_tac_toe_board(allocator, board);
+            board_string = try board_to_string(allocator, board);
 
             try stdout.print("Board:\n{s}", .{board_string});
             if (check_win(board)) {
@@ -108,7 +108,7 @@ pub fn main() !void {
         board[position_int - 1] = if (is_x_turn) 'X' else 'O';
         // Free old board string before assigning new one
         allocator.free(board_string);
-        board_string = try draw_tic_tac_toe_board(allocator, board);
+        board_string = try board_to_string(allocator, board);
         try stdout.print("Board:\n{s}", .{board_string});
 
         if (check_win(board)) {
@@ -127,7 +127,7 @@ pub fn main() !void {
     try bw.flush();
 }
 
-pub fn draw_tic_tac_toe_board(allocator: std.mem.Allocator, board: [9]u8) ![]u8 {
+fn board_to_string(allocator: std.mem.Allocator, board: [9]u8) ![]u8 {
     var result = std.ArrayList(u8).init(allocator);
     defer result.deinit();
 
@@ -140,7 +140,7 @@ pub fn draw_tic_tac_toe_board(allocator: std.mem.Allocator, board: [9]u8) ![]u8 
     return result.toOwnedSlice();
 }
 
-pub fn check_draw(board: [9]u8) bool {
+fn check_draw(board: [9]u8) bool {
     var is_draw = true;
     for (board) |cell| {
         if (cell != 'X' and cell != 'O') {
@@ -151,7 +151,7 @@ pub fn check_draw(board: [9]u8) bool {
     return is_draw;
 }
 
-pub fn check_win(board: [9]u8) bool {
+fn check_win(board: [9]u8) bool {
     // check rows
     if (board[0] == board[1] and board[1] == board[2]) {
         return true;
