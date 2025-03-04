@@ -57,6 +57,12 @@ fn createTicTacToePrompt(board: []const u8, computer_symbol: u8) ![]const u8 {
         try prompt.appendSlice(" ");
     }
     try prompt.appendSlice("The number you select MUST be in the above available moves.");
+    try prompt.appendSlice("Consider all available moves before you make your move.");
+    try prompt.appendSlice("The goal of the game is to get 3 of your symbols in a row, column, or diagonal.");
+    try prompt.appendSlice("If you see a winning opportunity, you MUST take it.");
+    try prompt.appendSlice("If you can make a move that will make you win in the next move, you MUST make that move.");
+    try prompt.appendSlice("If you see a move that will block the other player from winning, you MUST make that move.");
+    try prompt.appendSlice("Remember, you MUST pick a move out of the available moves.");
 
     return prompt.toOwnedSlice();
 }
@@ -69,7 +75,7 @@ fn getAvailableMoves(allocator: std.mem.Allocator, board: []const u8) ![]u8 {
     for (board) |char| {
         // Check if the character is a digit between 1 and 9
         if (char >= '1' and char <= '9') {
-            try available_moves.append(char);
+            try available_moves.append(char); // Convert from ASCII to numeric value
         }
     }
 
